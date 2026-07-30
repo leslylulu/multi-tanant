@@ -38,10 +38,16 @@ export async function createSubdomainAction(
     };
   }
 
-  const subdomainAlreadyExists = await redis.get(
-    `subdomain:${sanitizedSubdomain}`
+  const created = await redis.set(
+    `subdomain:${sanitizedSubdomain}`,
+    {
+      emoji: icon,
+      createdAt: Date.now()
+    },
+    { nx: true }
   );
-  if (subdomainAlreadyExists) {
+
+  if (!created) {
     return {
       subdomain,
       icon,
@@ -49,11 +55,6 @@ export async function createSubdomainAction(
       error: 'This subdomain is already taken'
     };
   }
-
-  await redis.set(`subdomain:${sanitizedSubdomain}`, {
-    emoji: icon,
-    createdAt: Date.now()
-  });
 
   redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`);
 }
